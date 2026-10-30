@@ -1,3 +1,6 @@
+import math
+
+
 def bresenham_line(x0, y0, x1, y1):
     dx, dy = abs(x1 - x0), abs(y1 - y0)
     sx = 1 if x1 >= x0 else -1
@@ -67,10 +70,36 @@ def draw_line(fb, x0, y0, x1, y1, color, size=1):
     stamp(fb, bresenham_line(x0, y0, x1, y1), color, size)
 
 
+def draw_polygon(fb, points, color, size=1):
+    for i in range(len(points)):
+        draw_line(fb, *points[i], *points[(i + 1) % len(points)], color, size)
+
+
+def fill_polygon(fb, points, color):
+    # Varre a figura linha por linha: acha onde cada aresta cruza aquela altura e pinta entre os pares de cruzamentos
+    ys = [y for _, y in points]
+    for y in range(min(ys), max(ys) + 1):
+        crossings = []
+        for (x0, y0), (x1, y1) in zip(points, points[1:] + points[:1]):
+            # Cada aresta conta a ponta de cima e não a de baixo, pra um vértice não valer por dois
+            if min(y0, y1) <= y < max(y0, y1):
+                crossings.append(x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+        crossings.sort()
+        for a, b in zip(crossings[::2], crossings[1::2]):
+            fb.put_span(math.ceil(a), math.floor(b), y, color)
+    draw_polygon(fb, points, color)
+
+
 def draw_rect(fb, x0, y0, x1, y1, color, size=1):
+    draw_polygon(fb, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], color, size)
+
+
+def draw_dashed_rect(fb, x0, y0, x1, y1, color, dash=4):
     corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
     for i in range(4):
-        draw_line(fb, *corners[i], *corners[(i + 1) % 4], color, size)
+        for k, (x, y) in enumerate(bresenham_line(*corners[i], *corners[(i + 1) % 4])):
+            if k // dash % 2 == 0:
+                fb.put_pixel(x, y, color)
 
 
 def fill_rect(fb, x0, y0, x1, y1, color):
