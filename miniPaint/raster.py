@@ -24,6 +24,29 @@ def bresenham_line(x0, y0, x1, y1):
     return points
 
 
+def circle_octant(r):
+    # Só um oitavo do círculo; os outros sete pedaços saem espelhando esse
+    x, y, d = 0, r, 1 - r
+    points = [(x, y)]
+    while y > x:
+        if d < 0:
+            d += 2 * x + 3
+        else:
+            d += 2 * (x - y) + 5
+            y -= 1
+        x += 1
+        points.append((x, y))
+    return points
+
+
+def circle_points(cx, cy, r):
+    points = []
+    for x, y in circle_octant(r):
+        points += [(cx + x, cy + y), (cx - x, cy + y), (cx + x, cy - y), (cx - x, cy - y),
+                   (cx + y, cy + x), (cx - y, cy + x), (cx + y, cy - x), (cx - y, cy - x)]
+    return points
+
+
 def brush_offsets(size):
     # Os pixels de um disco: tudo que fica a até r de distância do centro
     r = size // 2
@@ -33,8 +56,36 @@ def brush_offsets(size):
             if dx * dx + dy * dy <= r * r]
 
 
-def draw_line(fb, x0, y0, x1, y1, color, size=1):
+def stamp(fb, points, color, size):
     offsets = brush_offsets(size)
-    for x, y in bresenham_line(x0, y0, x1, y1):
+    for x, y in points:
         for dx, dy in offsets:
             fb.put_pixel(x + dx, y + dy, color)
+
+
+def draw_line(fb, x0, y0, x1, y1, color, size=1):
+    stamp(fb, bresenham_line(x0, y0, x1, y1), color, size)
+
+
+def draw_rect(fb, x0, y0, x1, y1, color, size=1):
+    corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    for i in range(4):
+        draw_line(fb, *corners[i], *corners[(i + 1) % 4], color, size)
+
+
+def fill_rect(fb, x0, y0, x1, y1, color):
+    for y in range(min(y0, y1), max(y0, y1) + 1):
+        fb.put_span(x0, x1, y, color)
+
+
+def draw_circle(fb, cx, cy, r, color, size=1):
+    stamp(fb, circle_points(cx, cy, r), color, size)
+
+
+def fill_circle(fb, cx, cy, r, color):
+    # Cada ponto do oitavo dá as pontas de quatro trechos horizontais, um em cima e outro embaixo do centro
+    for x, y in circle_octant(r):
+        fb.put_span(cx - x, cx + x, cy + y, color)
+        fb.put_span(cx - x, cx + x, cy - y, color)
+        fb.put_span(cx - y, cx + y, cy + x, color)
+        fb.put_span(cx - y, cx + y, cy - x, color)

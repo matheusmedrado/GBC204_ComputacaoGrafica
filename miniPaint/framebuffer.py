@@ -20,8 +20,13 @@ class Framebuffer:
     def get_pixel(self, x, y):
         if not self.inside(x, y):
             return None
-        r, g, b = self.pixels[y, x]
-        return (int(r), int(g), int(b))
+        return tuple(self.pixels[y, x].tolist())
+
+    def put_span(self, x0, x1, y, color):
+        # Um trecho horizontal de uma vez: dá no mesmo que put_pixel em cada x, só que bem mais rápido
+        x0, x1 = max(min(x0, x1), 0), min(max(x0, x1), self.width - 1)
+        if 0 <= y < self.height and x0 <= x1:
+            self.pixels[y, x0:x1 + 1] = color
 
     def clear(self, color=None):
         self.pixels[:] = color or self.background
