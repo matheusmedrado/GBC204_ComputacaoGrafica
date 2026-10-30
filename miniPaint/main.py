@@ -126,7 +126,9 @@ class MiniPaint:
     def undo(self):
         if self.dragging:
             return
-        self.tool.cancel()
+        # Com um polígono pela metade, desfazer só joga ele fora
+        if self.tool.cancel():
+            return
         dropped = self.selection is not None
         self.selection = None
         while self.history:

@@ -48,7 +48,8 @@ class Tool:
         return None
 
     def cancel(self):
-        pass
+        # Devolve True se jogou fora algo pela metade, como um polígono ainda aberto
+        return False
 
     def preview(self, screen):
         pass
@@ -175,7 +176,9 @@ class PolygonTool(Tool):
         return shape
 
     def cancel(self):
+        drawing = bool(self.vertices)
         self.vertices = []
+        return drawing
 
     def preview(self, screen):
         if not self.vertices:
