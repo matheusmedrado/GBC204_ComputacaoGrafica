@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editores
+.idea/
+.vscode/
+
+# Material da disciplina (slides, enunciados e exemplos do professor): fica só local
+miniPaint/Slides/
+miniPaint/ex professor/
+miniPaint/Trabalhos.pdf
