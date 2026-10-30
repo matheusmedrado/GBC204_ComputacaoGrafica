@@ -1,8 +1,10 @@
 from framebuffer import Framebuffer, blend
-from raster import circle_points, draw_circle, draw_line, draw_rect, fill_circle, fill_rect
+from raster import (circle_points, draw_circle, draw_dashed_rect, draw_line, draw_polygon, draw_rect,
+                    fill_circle, fill_polygon, fill_rect, stamp)
 
 TOOLBAR_WIDTH = 84
 SIZES = {"fino": 1, "médio": 5, "grosso": 11}
+ROTATION_STEP, SCALE_STEP = 15, 1.1
 PALETTE = [
     ("Preto", (0, 0, 0)), ("Branco", (255, 255, 255)),
     ("Vermelho", (255, 0, 0)), ("Verde", (0, 255, 0)),
@@ -22,6 +24,8 @@ WHITE = (255, 255, 255)
 METAL = (170, 172, 180)
 SHAPE_FILL = (200, 222, 250)
 SHAPE_LINE = (40, 90, 170)
+GREEN = (40, 160, 80)
+RED = (210, 50, 50)
 
 
 def pencil_icon(fb, cx, cy):
@@ -61,6 +65,27 @@ def circle_icon(fb, cx, cy):
     draw_circle(fb, cx, cy, 9, SHAPE_LINE, 3)
 
 
+def polygon_icon(fb, cx, cy):
+    points = [(cx - 10, cy - 1), (cx - 2, cy - 9), (cx + 10, cy - 5), (cx + 7, cy + 8), (cx - 6, cy + 8)]
+    fill_polygon(fb, points, SHAPE_FILL)
+    draw_polygon(fb, points, SHAPE_LINE, 3)
+
+
+def arrowhead(fb, tip, base, half_width, color):
+    # Triângulo com a ponta em tip e a base atravessada em base
+    dx, dy = tip[0] - base[0], tip[1] - base[1]
+    length = max(abs(dx), abs(dy))
+    sx, sy = round(-dy / length * half_width), round(dx / length * half_width)
+    fill_polygon(fb, [tip, (base[0] + sx, base[1] + sy), (base[0] - sx, base[1] - sy)], color)
+
+
+def move_icon(fb, cx, cy):
+    draw_line(fb, cx - 8, cy, cx + 8, cy, INK)
+    draw_line(fb, cx, cy - 8, cx, cy + 8, INK)
+    for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+        arrowhead(fb, (cx + 11 * dx, cy + 11 * dy), (cx + 6 * dx, cy + 6 * dy), 4, INK)
+
+
 def bucket_icon(style):
     def icon(fb, cx, cy):
         # A alça é só a metade de cima de um círculo
@@ -83,6 +108,36 @@ def outline_icon(fb, cx, cy):
 
 def filled_icon(fb, cx, cy):
     fill_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, SHAPE_LINE)
+
+
+def rotate_icon(clockwise):
+    def icon(fb, cx, cy):
+        # Três quartos de um círculo, com a seta no topo apontando pro lado do giro
+        side = 1 if clockwise else -1
+        stamp(fb, [(x, y) for x, y in circle_points(cx, cy, 8) if not ((x - cx) * side > 0 and y < cy)], SHAPE_LINE, 3)
+        arrowhead(fb, (cx + 4 * side, cy - 8), (cx - side, cy - 8), 5, SHAPE_LINE)
+    return icon
+
+
+def scale_icon(grow):
+    def icon(fb, cx, cy):
+        fill_rect(fb, cx - 10, cy + 1, cx - 2, cy + 9, SHAPE_FILL)
+        draw_rect(fb, cx - 10, cy + 1, cx - 2, cy + 9, SHAPE_LINE)
+        draw_dashed_rect(fb, cx - 10, cy - 9, cx + 10, cy + 9, SHAPE_LINE, 2)
+        start, end = ((cx - 1, cy), (cx + 7, cy - 8)) if grow else ((cx + 7, cy - 8), (cx - 1, cy))
+        draw_line(fb, *start, *end, INK)
+        arrowhead(fb, end, (end[0] - (end[0] - start[0]) // 2, end[1] - (end[1] - start[1]) // 2), 3, INK)
+    return icon
+
+
+def apply_icon(fb, cx, cy):
+    draw_line(fb, cx - 7, cy, cx - 2, cy + 5, GREEN, 3)
+    draw_line(fb, cx - 2, cy + 5, cx + 8, cy - 6, GREEN, 3)
+
+
+def delete_icon(fb, cx, cy):
+    draw_line(fb, cx - 6, cy - 6, cx + 6, cy + 6, RED, 3)
+    draw_line(fb, cx - 6, cy + 6, cx + 6, cy - 6, RED, 3)
 
 
 def thickness_icon(size):
@@ -109,7 +164,7 @@ def new_icon(fb, cx, cy):
         draw_line(fb, *corners[i], *corners[(i + 1) % 5], INK)
     draw_line(fb, cx, cy - 10, cx, cy - 5, INK)
     draw_line(fb, cx, cy - 5, cx + 5, cy - 5, INK)
-    fill_circle(fb, cx + 6, cy + 6, 5, (40, 160, 80))
+    fill_circle(fb, cx + 6, cy + 6, 5, GREEN)
     draw_line(fb, cx + 4, cy + 6, cx + 8, cy + 6, WHITE)
     draw_line(fb, cx + 6, cy + 4, cx + 6, cy + 8, WHITE)
 
@@ -124,13 +179,14 @@ def save_icon(fb, cx, cy):
 
 
 class Button:
-    def __init__(self, x, y, w, h, label, icon, on_click, is_active, applies):
+    def __init__(self, x, y, w, h, label, icon, on_click, is_active, applies, why):
         self.x, self.y, self.w, self.h = x, y, w, h
         self.label = label
         self.icon = icon
         self.on_click = on_click
         self.is_active = is_active
         self.applies = applies
+        self.why = why
 
     def contains(self, x, y):
         return self.x <= x < self.x + self.w and self.y <= y < self.y + self.h
@@ -159,8 +215,10 @@ class Toolbar:
 
         icons = {
             "Lápis": pencil_icon, "Pincel": brush_icon, "Borracha": eraser_icon,
-            "Linha": line_icon, "Retângulo": rect_icon, "Círculo": circle_icon, "Balde": bucket_icon(app.style),
+            "Linha": line_icon, "Retângulo": rect_icon, "Círculo": circle_icon, "Polígono": polygon_icon,
+            "Balde": bucket_icon(app.style), "Mover": move_icon,
         }
+        tool_why = lambda: f"sem efeito na ferramenta {app.tool.name}"
         # O t=t prende cada ferramenta no seu botão; sem isso, todos ficariam com a última do laço
         self.add_section(2, 32, [
             (f"{t.name} ({t.shortcut})", icons[t.name], lambda t=t: app.select_tool(t), lambda t=t: app.tool is t)
@@ -169,27 +227,35 @@ class Toolbar:
         self.add_section(2, 28, [
             ("Vazado (V)", outline_icon, lambda: app.set_filled(False), lambda: not app.style.filled),
             ("Preenchido (V)", filled_icon, lambda: app.set_filled(True), lambda: app.style.filled),
-        ], applies=lambda: app.tool.uses_fill)
+        ], applies=lambda: app.tool.uses_fill, why=tool_why)
         self.add_section(1, 18, [
             (f"{name.capitalize()} ({i + 1})", thickness_icon(px),
              lambda n=name: app.set_size(n), lambda n=name: app.size_name == n)
             for i, (name, px) in enumerate(SIZES.items())
-        ], applies=lambda: app.tool.uses_size)
+        ], applies=lambda: app.tool.uses_size, why=tool_why)
         self.add_section(2, 24, [
             (name, swatch_icon(c), lambda c=c: app.set_color(c), lambda c=c: app.style.color == c)
             for name, c in PALETTE
         ])
+        self.add_section(2, 28, [
+            ("Girar pra esquerda (Q)", rotate_icon(False), lambda: app.rotate_selection(-ROTATION_STEP), lambda: False),
+            ("Girar pra direita (E)", rotate_icon(True), lambda: app.rotate_selection(ROTATION_STEP), lambda: False),
+            ("Diminuir (-)", scale_icon(False), lambda: app.scale_selection(1 / SCALE_STEP), lambda: False),
+            ("Aumentar (+)", scale_icon(True), lambda: app.scale_selection(SCALE_STEP), lambda: False),
+            ("Fixar no desenho (Enter)", apply_icon, app.commit_selection, lambda: False),
+            ("Apagar a forma (Delete)", delete_icon, app.delete_selection, lambda: False),
+        ], applies=lambda: app.selection is not None, why=lambda: "desenhe uma linha, retângulo, círculo ou polígono primeiro")
         self.add_section(2, 32, [
             ("Novo (N)", new_icon, app.new_drawing, lambda: False),
             ("Salvar (S)", save_icon, app.save, lambda: False),
         ])
 
-    def add_section(self, cols, h, items, applies=lambda: True):
+    def add_section(self, cols, h, items, applies=lambda: True, why=lambda: ""):
         w = (self.fb.width - 2 * MARGIN - GAP * (cols - 1)) // cols
         for i, (label, icon, on_click, is_active) in enumerate(items):
             x = MARGIN + (i % cols) * (w + GAP)
             y = self.y + (i // cols) * (h + GAP)
-            self.buttons.append(Button(x, y, w, h, label, icon, on_click, is_active, applies))
+            self.buttons.append(Button(x, y, w, h, label, icon, on_click, is_active, applies, why))
         rows = (len(items) + cols - 1) // cols
         self.y += rows * (h + GAP) - GAP + SECTION_GAP
         self.separators.append(self.y - SECTION_GAP // 2 - 1)
