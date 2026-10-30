@@ -86,7 +86,9 @@ def fill_polygon(fb, points, color):
                 crossings.append(x0 + (y - y0) * (x1 - x0) / (y1 - y0))
         crossings.sort()
         for a, b in zip(crossings[::2], crossings[1::2]):
-            fb.put_span(math.ceil(a), math.floor(b), y, color)
+            # Cruzamentos muito juntos podem não ter nenhum pixel entre eles
+            if math.ceil(a) <= math.floor(b):
+                fb.put_span(math.ceil(a), math.floor(b), y, color)
     draw_polygon(fb, points, color)
 
 
