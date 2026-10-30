@@ -1,6 +1,11 @@
 import numpy as np
 
 
+def blend(a, b, t):
+    # Mistura duas cores: t é quanto da segunda entra, de 0 a 1
+    return tuple(round(ca * (1 - t) + cb * t) for ca, cb in zip(a, b))
+
+
 class Framebuffer:
     def __init__(self, width, height, background=(255, 255, 255)):
         self.width = width

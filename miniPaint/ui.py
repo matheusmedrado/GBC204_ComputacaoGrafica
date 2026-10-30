@@ -1,4 +1,4 @@
-from framebuffer import Framebuffer
+from framebuffer import Framebuffer, blend
 from raster import circle_points, draw_circle, draw_line, draw_rect, fill_circle, fill_rect
 
 TOOLBAR_WIDTH = 84
@@ -20,12 +20,18 @@ ACTIVE_BORDER = (40, 100, 220)
 INK = (30, 30, 30)
 
 
-def scribble_icon(size):
-    def icon(fb, cx, cy):
-        points = [(cx - 9, cy + 5), (cx - 4, cy - 5), (cx + 1, cy + 4), (cx + 6, cy - 6), (cx + 9, cy - 2)]
-        for a, b in zip(points, points[1:]):
-            draw_line(fb, *a, *b, INK, size)
-    return icon
+def pencil_icon(fb, cx, cy):
+    draw_line(fb, cx + 8, cy - 8, cx + 6, cy - 6, (255, 170, 185), 5)
+    draw_line(fb, cx + 5, cy - 5, cx - 4, cy + 4, (245, 190, 40), 5)
+    draw_line(fb, cx - 5, cy + 5, cx - 7, cy + 7, (230, 200, 160), 3)
+    draw_line(fb, cx - 8, cy + 8, cx - 9, cy + 9, INK)
+
+
+def brush_icon(fb, cx, cy):
+    draw_line(fb, cx + 9, cy - 9, cx + 2, cy - 2, (150, 95, 50), 3)
+    draw_line(fb, cx + 1, cy - 1, cx - 2, cy + 2, (170, 172, 180), 5)
+    fill_circle(fb, cx - 5, cy + 5, 3, INK)
+    draw_line(fb, cx - 5, cy + 5, cx - 9, cy + 9, INK, 3)
 
 
 def eraser_icon(fb, cx, cy):
@@ -95,12 +101,13 @@ def save_icon(fb, cx, cy):
 
 
 class Button:
-    def __init__(self, x, y, w, h, label, icon, on_click, is_active):
+    def __init__(self, x, y, w, h, label, icon, on_click, is_active, applies):
         self.x, self.y, self.w, self.h = x, y, w, h
         self.label = label
         self.icon = icon
         self.on_click = on_click
         self.is_active = is_active
+        self.applies = applies
 
     def contains(self, x, y):
         return self.x <= x < self.x + self.w and self.y <= y < self.y + self.h
@@ -112,6 +119,12 @@ class Button:
         draw_rect(fb, x0, y0, x1, y1, ACTIVE_BORDER if active else BORDER, 3 if active else 1)
         self.icon(fb, self.x + self.w // 2, self.y + self.h // 2)
 
+        if not self.applies():
+            # A opção não vale pra ferramenta atual: o botão se mistura com o fundo da barra
+            for y in range(y0 - 1, y1 + 2):
+                for x in range(x0 - 1, x1 + 2):
+                    fb.put_pixel(x, y, blend(fb.get_pixel(x, y), BAR, 0.65))
+
 
 class Toolbar:
     def __init__(self, app, width, height):
@@ -122,7 +135,7 @@ class Toolbar:
         self.y = MARGIN
 
         icons = {
-            "Lápis": scribble_icon(1), "Pincel": scribble_icon(3), "Borracha": eraser_icon,
+            "Lápis": pencil_icon, "Pincel": brush_icon, "Borracha": eraser_icon,
             "Linha": line_icon, "Retângulo": rect_icon, "Círculo": circle_icon, "Balde": bucket_icon(app.style),
         }
         # O t=t prende cada ferramenta no seu botão; sem isso, todos ficariam com a última do laço
@@ -133,12 +146,12 @@ class Toolbar:
         self.add_section(2, 28, [
             ("Vazado (V)", outline_icon, lambda: app.set_filled(False), lambda: not app.style.filled),
             ("Preenchido (V)", filled_icon, lambda: app.set_filled(True), lambda: app.style.filled),
-        ])
+        ], applies=lambda: app.tool.uses_fill)
         self.add_section(1, 18, [
             (f"{name.capitalize()} ({i + 1})", thickness_icon(px),
              lambda n=name: app.set_size(n), lambda n=name: app.size_name == n)
             for i, (name, px) in enumerate(SIZES.items())
-        ])
+        ], applies=lambda: app.tool.uses_size)
         self.add_section(2, 24, [
             (name, swatch_icon(c), lambda c=c: app.set_color(c), lambda c=c: app.style.color == c)
             for name, c in PALETTE
@@ -148,12 +161,12 @@ class Toolbar:
             ("Salvar (S)", save_icon, app.save, lambda: False),
         ])
 
-    def add_section(self, cols, h, items):
+    def add_section(self, cols, h, items, applies=lambda: True):
         w = (self.fb.width - 2 * MARGIN - GAP * (cols - 1)) // cols
         for i, (label, icon, on_click, is_active) in enumerate(items):
             x = MARGIN + (i % cols) * (w + GAP)
             y = self.y + (i // cols) * (h + GAP)
-            self.buttons.append(Button(x, y, w, h, label, icon, on_click, is_active))
+            self.buttons.append(Button(x, y, w, h, label, icon, on_click, is_active, applies))
         rows = (len(items) + cols - 1) // cols
         self.y += rows * (h + GAP) - GAP + SECTION_GAP
         self.separators.append(self.y - SECTION_GAP // 2 - 1)
@@ -170,8 +183,8 @@ class Toolbar:
             button.on_click()
 
     def draw(self, mouse):
-        # Só redesenha quando muda o botão sob o mouse ou algum botão marcado
-        state = (self.button_at(*mouse), [b.is_active() for b in self.buttons])
+        # Só redesenha quando muda o botão sob o mouse ou o estado de algum botão
+        state = (self.button_at(*mouse), [(b.is_active(), b.applies()) for b in self.buttons])
         if state == self.last_state:
             return
         self.last_state = state

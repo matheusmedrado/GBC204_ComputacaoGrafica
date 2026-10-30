@@ -21,11 +21,12 @@ class MiniPaint:
         # A tela é o canvas mais a prévia do que ainda está sendo desenhado
         self.screen = Framebuffer(CANVAS_WIDTH, CANVAS_HEIGHT)
         self.style = Style()
-        self.size_name = "fino"
-        self.tools = [Pencil(self.style), Brush(self.style), Eraser(self.style), Line(self.style),
+        self.set_size("médio")
+        brush = Brush(self.style)
+        self.tools = [Pencil(self.style), brush, Eraser(self.style), Line(self.style),
                       Rect(self.style), Circle(self.style), Bucket(self.style)]
         self.tool_keys = {getattr(glfw, "KEY_" + t.shortcut): t for t in self.tools}
-        self.tool = self.tools[0]
+        self.tool = brush
         self.toolbar = Toolbar(self, TOOLBAR_WIDTH, CANVAS_HEIGHT)
         self.dragging = False
         self.mouse = (-1, -1)
@@ -125,6 +126,8 @@ class MiniPaint:
         hovered = self.toolbar.button_at(*self.mouse)
         if time.time() < self.message_until:
             text = self.message
+        elif hovered and not hovered.applies():
+            text = f"{hovered.label}  |  sem efeito na ferramenta {self.tool.name}"
         elif hovered:
             text = hovered.label
         else:

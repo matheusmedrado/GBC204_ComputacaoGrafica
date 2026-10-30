@@ -14,6 +14,8 @@ class Style:
 class Tool:
     name = ""
     shortcut = ""
+    uses_size = True
+    uses_fill = False
 
     def __init__(self, style):
         self.style = style
@@ -54,6 +56,7 @@ class Brush(Tool):
 class Pencil(Brush):
     name = "Lápis"
     shortcut = "P"
+    uses_size = False
 
     def size(self):
         return 1
@@ -100,7 +103,16 @@ class Line(Shape):
         draw_line(fb, *self.start, *self.end, self.style.color, self.style.size)
 
 
-class Rect(Shape):
+class ClosedShape(Shape):
+    # Pode ser vazada ou preenchida, e a espessura só vale pro contorno
+    uses_fill = True
+
+    @property
+    def uses_size(self):
+        return not self.style.filled
+
+
+class Rect(ClosedShape):
     name = "Retângulo"
     shortcut = "R"
 
@@ -111,7 +123,7 @@ class Rect(Shape):
             draw_rect(fb, *self.start, *self.end, self.style.color, self.style.size)
 
 
-class Circle(Shape):
+class Circle(ClosedShape):
     name = "Círculo"
     shortcut = "C"
 
@@ -128,6 +140,7 @@ class Circle(Shape):
 class Bucket(Tool):
     name = "Balde"
     shortcut = "F"
+    uses_size = False
 
     def press(self, canvas, x, y):
         flood_fill(canvas, x, y, self.style.color)
