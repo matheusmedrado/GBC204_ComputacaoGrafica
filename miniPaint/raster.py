@@ -13,6 +13,7 @@ def bresenham_line(x0, y0, x1, y1):
         main_step, side_step, long, short = (0, sy), (sx, 0), dy, dx
 
     x, y = x0, y0
+    # Parâmetro de decisão do slide, pk = Δx(d1 − d2), com long no papel de Δx e short no de Δy
     p = 2 * short - long
     points = [(x, y)]
     for _ in range(long):
@@ -32,6 +33,7 @@ def circle_octant(r):
     x, y, d = 0, r, 1 - r
     points = [(x, y)]
     while y > x:
+        # d < 0: o ponto médio entre os candidatos está dentro do círculo, então segue no E; senão desce pro SE
         if d < 0:
             d += 2 * x + 3
         else:

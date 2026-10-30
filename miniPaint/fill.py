@@ -7,6 +7,7 @@ def flood_fill(fb, x, y, color):
     stack = [(x, y)]
     while stack:
         x, y = stack.pop()
+        # Fora da tela o get_pixel devolve None, então a borda também segura a tinta
         if fb.get_pixel(x, y) != target:
             continue
         fb.put_pixel(x, y, color)

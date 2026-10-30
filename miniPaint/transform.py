@@ -34,6 +34,7 @@ def around(center, m):
 
 
 def apply(m, points):
+    # [x y 1] · M feito à mão; a terceira coluna sempre dá 1 e fica de fora
     return [(x * m[0][0] + y * m[1][0] + m[2][0],
              x * m[0][1] + y * m[1][1] + m[2][1]) for x, y in points]
 

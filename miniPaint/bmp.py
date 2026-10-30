@@ -8,6 +8,7 @@ def save_bmp(fb, path):
     image_size = row_size * fb.height
 
     with open(path, "wb") as f:
+        # Cabeçalho do arquivo (14 bytes) e da imagem (40 bytes): 24 bits por pixel, sem compressão
         f.write(b"BM" + struct.pack("<IHHI", 54 + image_size, 0, 0, 54))
         f.write(struct.pack("<IiiHHIIiiII", 40, fb.width, fb.height, 1, 24, 0, image_size, 2835, 2835, 0, 0))
         # O BMP guarda as linhas de baixo pra cima e cada cor na ordem azul, verde, vermelho
