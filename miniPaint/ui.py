@@ -18,6 +18,10 @@ ACTIVE = (196, 216, 255)
 BORDER = (150, 155, 165)
 ACTIVE_BORDER = (40, 100, 220)
 INK = (30, 30, 30)
+WHITE = (255, 255, 255)
+METAL = (170, 172, 180)
+SHAPE_FILL = (200, 222, 250)
+SHAPE_LINE = (40, 90, 170)
 
 
 def pencil_icon(fb, cx, cy):
@@ -29,49 +33,56 @@ def pencil_icon(fb, cx, cy):
 
 def brush_icon(fb, cx, cy):
     draw_line(fb, cx + 9, cy - 9, cx + 2, cy - 2, (150, 95, 50), 3)
-    draw_line(fb, cx + 1, cy - 1, cx - 2, cy + 2, (170, 172, 180), 5)
+    draw_line(fb, cx + 1, cy - 1, cx - 2, cy + 2, METAL, 5)
     fill_circle(fb, cx - 5, cy + 5, 3, INK)
     draw_line(fb, cx - 5, cy + 5, cx - 9, cy + 9, INK, 3)
 
 
 def eraser_icon(fb, cx, cy):
-    fill_rect(fb, cx - 9, cy - 5, cx + 9, cy + 5, (255, 180, 195))
-    draw_rect(fb, cx - 9, cy - 5, cx + 9, cy + 5, INK)
+    draw_line(fb, cx - 10, cy + 10, cx - 1, cy + 10, METAL)
+    draw_line(fb, cx - 4, cy + 4, cx + 1, cy - 1, (255, 160, 175), 9)
+    draw_line(fb, cx + 3, cy - 3, cx + 6, cy - 6, (70, 110, 200), 9)
 
 
 def line_icon(fb, cx, cy):
-    draw_line(fb, cx - 9, cy + 7, cx + 9, cy - 7, INK)
-    fill_circle(fb, cx - 9, cy + 7, 2, INK)
-    fill_circle(fb, cx + 9, cy - 7, 2, INK)
+    draw_line(fb, cx - 8, cy + 6, cx + 8, cy - 6, INK)
+    for x, y in [(cx - 8, cy + 6), (cx + 8, cy - 6)]:
+        fill_circle(fb, x, y, 3, WHITE)
+        draw_circle(fb, x, y, 3, SHAPE_LINE)
 
 
 def rect_icon(fb, cx, cy):
-    draw_rect(fb, cx - 10, cy - 7, cx + 10, cy + 7, INK)
+    fill_rect(fb, cx - 10, cy - 7, cx + 10, cy + 7, SHAPE_FILL)
+    draw_rect(fb, cx - 10, cy - 7, cx + 10, cy + 7, SHAPE_LINE, 3)
 
 
 def circle_icon(fb, cx, cy):
-    draw_circle(fb, cx, cy, 9, INK)
+    fill_circle(fb, cx, cy, 9, SHAPE_FILL)
+    draw_circle(fb, cx, cy, 9, SHAPE_LINE, 3)
 
 
 def bucket_icon(style):
     def icon(fb, cx, cy):
         # A alça é só a metade de cima de um círculo
-        for x, y in circle_points(cx - 2, cy - 1, 6):
-            if y <= cy - 1:
+        for x, y in circle_points(cx - 2, cy - 2, 7):
+            if y <= cy - 2:
                 fb.put_pixel(x, y, INK)
-        fill_rect(fb, cx - 8, cy - 1, cx + 4, cy + 9, style.color)
-        draw_rect(fb, cx - 8, cy - 1, cx + 4, cy + 9, INK)
-        fill_circle(fb, cx + 8, cy + 5, 2, style.color)
-        draw_circle(fb, cx + 8, cy + 5, 2, INK)
+        fill_rect(fb, cx - 9, cy - 2, cx + 5, cy + 10, METAL)
+        fill_rect(fb, cx - 9, cy - 2, cx + 5, cy + 2, style.color)
+        draw_rect(fb, cx - 9, cy - 2, cx + 5, cy + 10, INK)
+        draw_line(fb, cx + 6, cy - 1, cx + 8, cy + 3, style.color, 3)
+        fill_circle(fb, cx + 9, cy + 8, 2, style.color)
+        draw_circle(fb, cx + 9, cy + 8, 2, INK)
     return icon
 
 
 def outline_icon(fb, cx, cy):
-    draw_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, INK)
+    fill_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, WHITE)
+    draw_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, SHAPE_LINE, 3)
 
 
 def filled_icon(fb, cx, cy):
-    fill_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, INK)
+    fill_rect(fb, cx - 8, cy - 6, cx + 8, cy + 6, SHAPE_LINE)
 
 
 def thickness_icon(size):
@@ -88,16 +99,28 @@ def swatch_icon(color):
 
 
 def new_icon(fb, cx, cy):
-    fill_rect(fb, cx - 7, cy - 9, cx + 7, cy + 9, (255, 255, 255))
-    draw_rect(fb, cx - 7, cy - 9, cx + 7, cy + 9, INK)
-    draw_line(fb, cx + 2, cy - 9, cx + 7, cy - 4, INK)
+    fill_rect(fb, cx - 8, cy - 5, cx + 5, cy + 8, WHITE)
+    fill_rect(fb, cx - 8, cy - 10, cx - 1, cy - 5, WHITE)
+    # A ponta dobrada é um triângulo: cada linha dele é um pouco mais larga que a de cima
+    for i in range(6):
+        fb.put_span(cx, cx + i, cy - 10 + i, (215, 218, 225))
+    corners = [(cx - 8, cy - 10), (cx, cy - 10), (cx + 5, cy - 5), (cx + 5, cy + 8), (cx - 8, cy + 8)]
+    for i in range(5):
+        draw_line(fb, *corners[i], *corners[(i + 1) % 5], INK)
+    draw_line(fb, cx, cy - 10, cx, cy - 5, INK)
+    draw_line(fb, cx, cy - 5, cx + 5, cy - 5, INK)
+    fill_circle(fb, cx + 6, cy + 6, 5, (40, 160, 80))
+    draw_line(fb, cx + 4, cy + 6, cx + 8, cy + 6, WHITE)
+    draw_line(fb, cx + 6, cy + 4, cx + 6, cy + 8, WHITE)
 
 
 def save_icon(fb, cx, cy):
     fill_rect(fb, cx - 9, cy - 9, cx + 9, cy + 9, (60, 90, 160))
     fill_rect(fb, cx - 5, cy - 9, cx + 4, cy - 4, (200, 205, 215))
     fill_rect(fb, cx + 1, cy - 8, cx + 3, cy - 5, (60, 90, 160))
-    fill_rect(fb, cx - 6, cy + 1, cx + 6, cy + 7, (255, 255, 255))
+    fill_rect(fb, cx - 6, cy + 1, cx + 6, cy + 7, WHITE)
+    draw_line(fb, cx - 4, cy + 3, cx + 4, cy + 3, METAL)
+    draw_line(fb, cx - 4, cy + 5, cx + 4, cy + 5, METAL)
 
 
 class Button:
