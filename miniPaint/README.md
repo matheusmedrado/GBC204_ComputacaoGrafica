@@ -74,7 +74,7 @@ Trocar a cor, a espessura ou o preenchimento com a forma selecionada muda a pró
 | Estrutura de dados | `shapes.py`: cada forma é uma lista de pontos com seu estilo |
 | Translação, rotação e escala | `transform.py`: matrizes 3x3 em coordenadas homogêneas |
 | Paleta, espessura, Novo e Salvar | `ui.py` e `bmp.py` |
-| Cores RGB e blend | `framebuffer.py`, `blend`, usado nos botões apagados da barra |
+| Cores RGB e blend | `framebuffer.py`, `blend` e `blend_span`, usados no azul translúcido da área sendo selecionada e nos botões apagados da barra |
 
 ## Organização do código
 

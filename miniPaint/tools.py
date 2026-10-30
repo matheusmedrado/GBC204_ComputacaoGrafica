@@ -1,7 +1,7 @@
 import math
 
 from fill import flood_fill
-from raster import draw_circle, draw_dashed_rect, draw_line, fill_rect
+from raster import blend_rect, draw_circle, draw_dashed_rect, draw_line, fill_rect
 from shapes import Circle, Line, Patch, Polygon
 
 SELECTION_COLOR = (40, 100, 220)
@@ -207,6 +207,7 @@ class SelectTool(ShapeTool):
 
     def preview(self, screen):
         if self.start:
+            blend_rect(screen, *self.start, *self.end, SELECTION_COLOR, 0.15)
             draw_dashed_rect(screen, *self.start, *self.end, SELECTION_COLOR)
 
 

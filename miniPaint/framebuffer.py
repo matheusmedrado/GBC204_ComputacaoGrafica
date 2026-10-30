@@ -2,7 +2,7 @@ import numpy as np
 
 
 def blend(a, b, t):
-    # Mistura duas cores: t é quanto da segunda entra, de 0 a 1
+    # t é quanto da segunda cor entra, como o alfa do glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) do slide
     return tuple(round(ca * (1 - t) + cb * t) for ca, cb in zip(a, b))
 
 
@@ -32,6 +32,13 @@ class Framebuffer:
         x0, x1 = max(min(x0, x1), 0), min(max(x0, x1), self.width - 1)
         if 0 <= y < self.height and x0 <= x1:
             self.pixels[y, x0:x1 + 1] = color
+
+    def blend_span(self, x0, x1, y, color, t):
+        # Como o put_span, só que mistura a cor com o que já está pintado em vez de cobrir
+        x0, x1 = max(min(x0, x1), 0), min(max(x0, x1), self.width - 1)
+        if 0 <= y < self.height and x0 <= x1:
+            row = self.pixels[y, x0:x1 + 1]
+            row[:] = np.round(row * (1 - t) + np.array(color) * t)
 
     def clear(self, color=None):
         self.pixels[:] = color or self.background

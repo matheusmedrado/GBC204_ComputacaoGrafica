@@ -109,6 +109,11 @@ def fill_rect(fb, x0, y0, x1, y1, color):
         fb.put_span(x0, x1, y, color)
 
 
+def blend_rect(fb, x0, y0, x1, y1, color, t):
+    for y in range(min(y0, y1), max(y0, y1) + 1):
+        fb.blend_span(x0, x1, y, color, t)
+
+
 def draw_circle(fb, cx, cy, r, color, size=1):
     stamp(fb, circle_points(cx, cy, r), color, size)
 
