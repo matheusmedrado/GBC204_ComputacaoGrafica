@@ -15,3 +15,7 @@ venv/
 miniPaint/Slides/
 miniPaint/ex professor/
 miniPaint/Trabalhos.pdf
+
+# Atividades extras de carga horária, fora dos trabalhos
+resenha_historia_computacao_grafica.*
+revisao_sprites.*
