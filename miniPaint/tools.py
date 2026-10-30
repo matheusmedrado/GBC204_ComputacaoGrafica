@@ -1,8 +1,10 @@
 import math
 
 from fill import flood_fill
-from raster import draw_circle, draw_line
-from shapes import Circle, Line, Polygon
+from raster import draw_circle, draw_dashed_rect, draw_line, fill_rect
+from shapes import Circle, Line, Patch, Polygon
+
+SELECTION_COLOR = (40, 100, 220)
 
 
 class Style:
@@ -182,6 +184,27 @@ class PolygonTool(Tool):
         for a, b in zip(points, points[1:]):
             draw_line(screen, *a, *b, self.style.color, self.style.size)
         draw_circle(screen, *self.vertices[0], 6, self.style.color)
+
+
+class SelectTool(ShapeTool):
+    name = "Selecionar"
+    shortcut = "A"
+    uses_size = False
+
+    def release(self, canvas, x, y):
+        (ax, ay), self.start, self.end = self.start, None, None
+        x0, x1 = max(min(ax, x), 0), min(max(ax, x), canvas.width - 1)
+        y0, y1 = max(min(ay, y), 0), min(max(ay, y), canvas.height - 1)
+        if x1 <= x0 or y1 <= y0:
+            return None
+        # Descola o pedaço: copia os pixels e deixa o buraco com a cor de fundo
+        pixels = canvas.pixels[y0:y1 + 1, x0:x1 + 1].copy()
+        fill_rect(canvas, x0, y0, x1, y1, canvas.background)
+        return Patch(pixels, x0, y0, self.style.copy())
+
+    def preview(self, screen):
+        if self.start:
+            draw_dashed_rect(screen, *self.start, *self.end, SELECTION_COLOR)
 
 
 class Bucket(Tool):

@@ -86,6 +86,12 @@ def move_icon(fb, cx, cy):
         arrowhead(fb, (cx + 11 * dx, cy + 11 * dy), (cx + 6 * dx, cy + 6 * dy), 4, INK)
 
 
+def select_icon(fb, cx, cy):
+    draw_dashed_rect(fb, cx - 10, cy - 8, cx + 10, cy + 8, INK, 2)
+    for x, y in [(cx - 10, cy - 8), (cx + 10, cy - 8), (cx + 10, cy + 8), (cx - 10, cy + 8)]:
+        fill_rect(fb, x - 1, y - 1, x + 1, y + 1, SHAPE_LINE)
+
+
 def bucket_icon(style):
     def icon(fb, cx, cy):
         # A alça é só a metade de cima de um círculo
@@ -115,7 +121,7 @@ def rotate_icon(clockwise):
         # Três quartos de um círculo, com a seta no topo apontando pro lado do giro
         side = 1 if clockwise else -1
         stamp(fb, [(x, y) for x, y in circle_points(cx, cy, 8) if not ((x - cx) * side > 0 and y < cy)], SHAPE_LINE, 3)
-        arrowhead(fb, (cx + 4 * side, cy - 8), (cx - side, cy - 8), 5, SHAPE_LINE)
+        arrowhead(fb, (cx + 4 * side, cy - 8), (cx - side, cy - 8), 4, SHAPE_LINE)
     return icon
 
 
@@ -151,6 +157,14 @@ def swatch_icon(color):
         fill_rect(fb, cx - 11, cy - 7, cx + 11, cy + 7, color)
         draw_rect(fb, cx - 11, cy - 7, cx + 11, cy + 7, BORDER)
     return icon
+
+
+def undo_icon(fb, cx, cy):
+    # Uma seta que faz a curva e volta: reta em cima, meia volta à direita, reta embaixo
+    stamp(fb, [(x, y) for x, y in circle_points(cx + 3, cy + 1, 5) if x >= cx + 3], SHAPE_LINE, 3)
+    draw_line(fb, cx - 3, cy - 4, cx + 3, cy - 4, SHAPE_LINE, 3)
+    draw_line(fb, cx - 4, cy + 6, cx + 3, cy + 6, SHAPE_LINE, 3)
+    arrowhead(fb, (cx - 9, cy - 4), (cx - 4, cy - 4), 4, SHAPE_LINE)
 
 
 def new_icon(fb, cx, cy):
@@ -216,15 +230,15 @@ class Toolbar:
         icons = {
             "Lápis": pencil_icon, "Pincel": brush_icon, "Borracha": eraser_icon,
             "Linha": line_icon, "Retângulo": rect_icon, "Círculo": circle_icon, "Polígono": polygon_icon,
-            "Balde": bucket_icon(app.style), "Mover": move_icon,
+            "Balde": bucket_icon(app.style), "Selecionar": select_icon, "Mover": move_icon,
         }
         tool_why = lambda: f"sem efeito na ferramenta {app.tool.name}"
         # O t=t prende cada ferramenta no seu botão; sem isso, todos ficariam com a última do laço
-        self.add_section(2, 32, [
+        self.add_section(2, 30, [
             (f"{t.name} ({t.shortcut})", icons[t.name], lambda t=t: app.select_tool(t), lambda t=t: app.tool is t)
             for t in app.tools
         ])
-        self.add_section(2, 28, [
+        self.add_section(2, 26, [
             ("Vazado (V)", outline_icon, lambda: app.set_filled(False), lambda: not app.style.filled),
             ("Preenchido (V)", filled_icon, lambda: app.set_filled(True), lambda: app.style.filled),
         ], applies=lambda: app.tool.uses_fill, why=tool_why)
@@ -237,18 +251,21 @@ class Toolbar:
             (name, swatch_icon(c), lambda c=c: app.set_color(c), lambda c=c: app.style.color == c)
             for name, c in PALETTE
         ])
-        self.add_section(2, 28, [
+        self.add_section(2, 26, [
             ("Girar pra esquerda (Q)", rotate_icon(False), lambda: app.rotate_selection(-ROTATION_STEP), lambda: False),
             ("Girar pra direita (E)", rotate_icon(True), lambda: app.rotate_selection(ROTATION_STEP), lambda: False),
             ("Diminuir (-)", scale_icon(False), lambda: app.scale_selection(1 / SCALE_STEP), lambda: False),
             ("Aumentar (+)", scale_icon(True), lambda: app.scale_selection(SCALE_STEP), lambda: False),
             ("Fixar no desenho (Enter)", apply_icon, app.commit_selection, lambda: False),
             ("Apagar a forma (Delete)", delete_icon, app.delete_selection, lambda: False),
-        ], applies=lambda: app.selection is not None, why=lambda: "desenhe uma linha, retângulo, círculo ou polígono primeiro")
-        self.add_section(2, 32, [
+        ], applies=lambda: app.selection is not None, why=lambda: "desenhe uma forma ou selecione uma área primeiro")
+        self.add_section(2, 28, [
             ("Novo (N)", new_icon, app.new_drawing, lambda: False),
             ("Salvar (S)", save_icon, app.save, lambda: False),
         ])
+        self.add_section(2, 28, [
+            ("Desfazer (Ctrl+Z)", undo_icon, app.undo, lambda: False),
+        ], applies=lambda: bool(app.history) or app.selection is not None, why=lambda: "nada pra desfazer")
 
     def add_section(self, cols, h, items, applies=lambda: True, why=lambda: ""):
         w = (self.fb.width - 2 * MARGIN - GAP * (cols - 1)) // cols

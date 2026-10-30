@@ -9,15 +9,15 @@ from OpenGL.GL import *
 from bmp import save_bmp
 from framebuffer import Framebuffer
 from raster import draw_dashed_rect
-from tools import (Brush, Bucket, CircleTool, Eraser, LineTool, MoveTool, Pencil, PolygonTool, RectTool,
-                   Style)
+from tools import (SELECTION_COLOR, Brush, Bucket, CircleTool, Eraser, LineTool, MoveTool, Pencil, PolygonTool,
+                   RectTool, SelectTool, Style)
 from transform import around, rotation, scale, translation
 from ui import ROTATION_STEP, SCALE_STEP, SIZES, TOOLBAR_WIDTH, Toolbar
 
 CANVAS_WIDTH, CANVAS_HEIGHT = 800, 600
 SIZE_KEYS = {glfw.KEY_1: "fino", glfw.KEY_2: "médio", glfw.KEY_3: "grosso"}
 SAVE_DIR = Path(__file__).resolve().parent / "desenhos"
-SELECTION_COLOR = (40, 100, 220)
+HISTORY_SIZE = 30
 
 
 class MiniPaint:
@@ -32,9 +32,11 @@ class MiniPaint:
         brush = Brush(self.style)
         self.tools = [Pencil(self.style), brush, Eraser(self.style), LineTool(self.style),
                       RectTool(self.style), CircleTool(self.style), PolygonTool(self.style),
-                      Bucket(self.style), MoveTool(self)]
+                      Bucket(self.style), SelectTool(self.style), MoveTool(self)]
         self.tool_keys = {getattr(glfw, "KEY_" + t.shortcut): t for t in self.tools}
         self.tool = brush
+        # Cópias do canvas de antes de cada mudança, pro Ctrl+Z
+        self.history = []
         self.toolbar = Toolbar(self, TOOLBAR_WIDTH, CANVAS_HEIGHT)
         self.dragging = False
         self.mouse = (-1, -1)
@@ -116,9 +118,28 @@ class MiniPaint:
         if self.selection:
             self.selection.transform(around(self.selection.center(), scale(factor, factor)))
 
+    def remember(self):
+        if not self.history or not self.canvas.matches(self.history[-1]):
+            self.history.append(self.canvas.snapshot())
+            del self.history[:-HISTORY_SIZE]
+
+    def undo(self):
+        if self.dragging:
+            return
+        self.tool.cancel()
+        dropped = self.selection is not None
+        self.selection = None
+        while self.history:
+            previous = self.history.pop()
+            # Se não tinha forma solta pra sumir, uma cópia igual à tela atual não desfaria nada
+            if dropped or not self.canvas.matches(previous):
+                self.canvas.restore(previous)
+                return
+
     def new_drawing(self):
         self.tool.cancel()
-        self.selection = None
+        self.commit_selection()
+        self.remember()
         self.canvas.clear()
 
     def save(self):
@@ -141,6 +162,7 @@ class MiniPaint:
         elif action == glfw.PRESS:
             if not self.tool.keeps_selection:
                 self.commit_selection()
+                self.remember()
             self.dragging = True
             self.select(self.tool.press(self.canvas, *self.to_canvas(x, y)))
         elif action == glfw.RELEASE and self.dragging:
@@ -181,6 +203,8 @@ class MiniPaint:
             self.scale_selection(1 / SCALE_STEP)
         elif action != glfw.PRESS:
             return
+        elif key == glfw.KEY_Z and mods & (glfw.MOD_CONTROL | glfw.MOD_SUPER):
+            self.undo()
         elif key == glfw.KEY_ESCAPE:
             glfw.set_window_should_close(window, True)
         elif key in (glfw.KEY_ENTER, glfw.KEY_KP_ENTER):
