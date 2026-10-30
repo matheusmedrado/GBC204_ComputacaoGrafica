@@ -2,7 +2,7 @@ import glfw
 from OpenGL.GL import *
 
 from framebuffer import Framebuffer
-from tools import Brush, Eraser, Line, Pencil, Style
+from tools import Brush, Bucket, Circle, Eraser, Line, Pencil, Rect, Style
 
 WIDTH, HEIGHT = 800, 600
 SIZES = {glfw.KEY_1: ("fino", 1), glfw.KEY_2: ("médio", 5), glfw.KEY_3: ("grosso", 11)}
@@ -20,6 +20,9 @@ class MiniPaint:
             glfw.KEY_I: Brush(self.style),
             glfw.KEY_B: Eraser(self.style),
             glfw.KEY_L: Line(self.style),
+            glfw.KEY_R: Rect(self.style),
+            glfw.KEY_C: Circle(self.style),
+            glfw.KEY_F: Bucket(self.style),
         }
         self.tool = self.tools[glfw.KEY_P]
         self.dragging = False
@@ -44,7 +47,8 @@ class MiniPaint:
         self.update_title()
 
     def update_title(self):
-        glfw.set_window_title(self.window, f"Mini Paint  |  {self.tool.name}  |  {self.size_name}")
+        fill = "preenchido" if self.style.filled else "vazado"
+        glfw.set_window_title(self.window, f"Mini Paint  |  {self.tool.name}  |  {self.size_name}  |  {fill}")
 
     def on_mouse_button(self, window, button, action, mods):
         if button != glfw.MOUSE_BUTTON_LEFT:
@@ -68,6 +72,8 @@ class MiniPaint:
             glfw.set_window_should_close(window, True)
         elif key == glfw.KEY_N:
             self.canvas.clear()
+        elif key == glfw.KEY_V:
+            self.style.filled = not self.style.filled
         elif key in SIZES:
             self.size_name, self.style.size = SIZES[key]
         elif key in self.tools and not self.dragging:
