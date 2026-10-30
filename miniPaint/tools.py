@@ -13,6 +13,7 @@ class Style:
 
 class Tool:
     name = ""
+    shortcut = ""
 
     def __init__(self, style):
         self.style = style
@@ -32,6 +33,7 @@ class Tool:
 
 class Brush(Tool):
     name = "Pincel"
+    shortcut = "I"
 
     def color(self, canvas):
         return self.style.color
@@ -51,6 +53,7 @@ class Brush(Tool):
 
 class Pencil(Brush):
     name = "Lápis"
+    shortcut = "P"
 
     def size(self):
         return 1
@@ -58,6 +61,7 @@ class Pencil(Brush):
 
 class Eraser(Brush):
     name = "Borracha"
+    shortcut = "B"
 
     def color(self, canvas):
         return canvas.background
@@ -90,6 +94,7 @@ class Shape(Tool):
 
 class Line(Shape):
     name = "Linha"
+    shortcut = "L"
 
     def draw(self, fb):
         draw_line(fb, *self.start, *self.end, self.style.color, self.style.size)
@@ -97,6 +102,7 @@ class Line(Shape):
 
 class Rect(Shape):
     name = "Retângulo"
+    shortcut = "R"
 
     def draw(self, fb):
         if self.style.filled:
@@ -107,6 +113,7 @@ class Rect(Shape):
 
 class Circle(Shape):
     name = "Círculo"
+    shortcut = "C"
 
     def draw(self, fb):
         # O clique marca o centro, e o raio vai até onde o mouse está
@@ -120,6 +127,7 @@ class Circle(Shape):
 
 class Bucket(Tool):
     name = "Balde"
+    shortcut = "F"
 
     def press(self, canvas, x, y):
         flood_fill(canvas, x, y, self.style.color)
