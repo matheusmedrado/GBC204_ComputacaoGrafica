@@ -30,7 +30,7 @@ No Windows, use `python` no lugar de `python3`.
 | Linha | L | Clique no começo e arraste até o fim |
 | Retângulo | R | Arraste de um canto ao outro |
 | Círculo | C | Clique no centro e arraste até a borda |
-| Polígono | G | Clique em cada vértice e feche clicando no primeiro ponto ou com Enter |
+| Polígono | G | Clique em cada vértice e feche clicando no primeiro ponto ou com Enter. Esc ou Ctrl+Z desistem do polígono aberto |
 | Balde | F | Pinta a região da mesma cor em volta do clique |
 | Selecionar | A | Arraste um retângulo pra descolar aquele pedaço do desenho |
 | Mover | M | Arraste a forma ou a área selecionada |
@@ -58,7 +58,7 @@ Trocar a cor, a espessura ou o preenchimento com a forma selecionada muda a pró
 | Novo | N |
 | Salvar em BMP, na pasta `desenhos/` | S |
 | Desfazer | Ctrl+Z (Cmd+Z no Mac) |
-| Sair | Esc |
+| Sair | Esc duas vezes seguidas, pra não fechar sem querer |
 
 ## Onde está cada requisito
 

@@ -42,6 +42,7 @@ class MiniPaint:
         self.mouse = (-1, -1)
         self.over_canvas = False
         self.message, self.message_until = "", 0
+        self.quit_until = 0
         self.title = None
         self.window = None
 
@@ -138,6 +139,16 @@ class MiniPaint:
                 self.canvas.restore(previous)
                 return
 
+    def escape(self):
+        # Esc desiste do polígono pela metade; sem nada pra desistir, só fecha se apertar de novo logo em seguida
+        if self.tool.cancel():
+            return
+        if time.time() < self.quit_until:
+            glfw.set_window_should_close(self.window, True)
+        else:
+            self.quit_until = time.time() + 2
+            self.message, self.message_until = "Esc de novo pra sair  |  o que não foi salvo se perde", self.quit_until
+
     def new_drawing(self):
         self.tool.cancel()
         self.commit_selection()
@@ -208,7 +219,7 @@ class MiniPaint:
         elif key == glfw.KEY_Z and mods & (glfw.MOD_CONTROL | glfw.MOD_SUPER):
             self.undo()
         elif key == glfw.KEY_ESCAPE:
-            glfw.set_window_should_close(window, True)
+            self.escape()
         elif key in (glfw.KEY_ENTER, glfw.KEY_KP_ENTER):
             shape = self.tool.enter()
             if shape:
