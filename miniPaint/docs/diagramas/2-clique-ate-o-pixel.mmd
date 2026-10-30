@@ -1,0 +1,54 @@
+sequenceDiagram
+  participant glfw
+  participant M as main.py<br/>MiniPaint
+  participant T as tools.py<br/>Tool
+  participant S as shapes.py<br/>Shape
+  participant R as raster.py<br/>fill.py
+  participant C as MiniPaint.canvas
+  participant SC as MiniPaint.screen
+  participant GL as OpenGL.GL
+
+  Note over glfw,M: Você aperta o botão em cima do canvas
+  glfw->>M: on_mouse_button(PRESS)
+  opt Qualquer ferramenta menos o Mover
+    M->>M: commit_selection()
+    M->>S: selection.draw(canvas)
+    M->>M: remember()
+  end
+  M->>T: press(canvas, x, y)
+  Note over glfw,M: Você arrasta o mouse
+  glfw->>M: on_cursor_move(x, y)
+  M->>T: drag(canvas, x, y)
+  alt Pincel, Lápis e Borracha pintam direto no canvas
+    T->>R: draw_line(canvas, last, x, y)
+    R->>R: bresenham_line(), stamp()
+    R->>C: put_pixel(x, y, color)
+  else Balde pinta no press
+    T->>R: flood_fill(canvas, x, y, color)
+    R->>C: get_pixel(), put_pixel()
+  else Linha, Retângulo, Círculo, Polígono e Selecionar só guardam os pontos
+    T->>T: start, end, vertices
+  end
+
+  loop A cada quadro, dentro de MiniPaint.run
+    M->>SC: copy_from(canvas)
+    M->>S: selection.draw(screen)
+    M->>R: draw_dashed_rect(screen)
+    M->>T: preview(screen)
+    alt Linha, Retângulo e Círculo
+      T->>T: make()
+      T->>S: draw(screen)
+      S->>R: draw_line(), draw_circle(), fill_polygon()
+    else Polígono e Selecionar desenham a prévia direto
+      T->>R: draw_line(), blend_rect(), draw_dashed_rect()
+    end
+    R->>SC: put_pixel(), put_span()
+    M->>GL: glDrawPixels(screen.pixels)
+  end
+
+  Note over glfw,M: Você solta o botão
+  glfw->>M: on_mouse_button(RELEASE)
+  M->>T: release(canvas, x, y)
+  T-->>M: Shape
+  M->>M: select(shape)
+  Note over M,S: A forma pronta vira <code>MiniPaint.selection</code>, solta por cima do canvas.<br/>O Polígono entrega a forma no press que fecha a figura ou no Enter.<br/>O <code>SelectTool.release</code> já copia os pixels e pinta o buraco no canvas.

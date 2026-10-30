@@ -1,0 +1,20 @@
+stateDiagram-v2
+  direction LR
+  state "Prévia<br/><code>Tool.preview</code>" as Previa
+  state "Solta por cima do canvas<br/><code>MiniPaint.selection</code>" as Solta
+  state "Fixada no canvas<br/><code>MiniPaint.commit_selection</code>" as Fixada
+  state "Jogada fora<br/><code>MiniPaint.delete_selection</code><br/><code>MiniPaint.undo</code>" as Fora
+
+  [*] --> Previa : aperta o mouse com Linha,<br/>Retângulo, Círculo ou<br/>Selecionar, ou marca o<br/>primeiro vértice do Polígono
+  Previa --> [*] : Esc, Ctrl+Z, N ou troca de<br/>ferramenta com o polígono<br/>aberto (<code>cancel</code>), ou área<br/>vazia no Selecionar
+  Previa --> Solta : solta o mouse (<code>release</code>) ou<br/>fecha o polígono (<code>enter</code>)
+  Solta --> Solta : setas e Mover (<code>translation</code>)<br/>Q e E (<code>rotation</code>)<br/>+ e − (<code>scale</code>)<br/>cor, espessura e vazado,<br/>menos na área do Selecionar
+  Solta --> Fixada : Enter, N, S, botão Fixar,<br/>novo clique no canvas<br/>ou troca de ferramenta.<br/>Com o Mover, só clique<br/>fora da moldura
+  Solta --> Fora : Delete, Backspace,<br/>botão Apagar ou Ctrl+Z
+  Fixada --> [*]
+  Fora --> [*]
+
+  class Previa purple
+  class Solta blue
+  class Fixada teal
+  class Fora orange

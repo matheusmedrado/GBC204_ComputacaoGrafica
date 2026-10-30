@@ -1,0 +1,72 @@
+flowchart LR
+  subgraph quem["Quem chama"]
+    brush["<code>Brush</code><br/>pincel, lápis e borracha"]
+    line["<code>Line</code>"]
+    polygon["<code>Polygon</code><br/>retângulo e polígono"]
+    circle["<code>Circle</code>"]
+    bucket["<code>Bucket</code>"]
+    moves["<code>MiniPaint.move_selection</code><br/><code>MiniPaint.rotate_selection</code><br/><code>MiniPaint.scale_selection</code>"]
+    patch["<code>Patch</code><br/>área do Selecionar"]
+    selpreview["<code>SelectTool.preview</code>"]
+    button["<code>Button.draw</code><br/>botão apagado"]
+  end
+  subgraph bres["Reta: Bresenham"]
+    bl["<code>bresenham_line</code>"]
+    st["<code>stamp</code><br/>disco da espessura"]
+  end
+  subgraph pm["Círculo: ponto médio"]
+    cp["<code>circle_points</code><br/>8 simetrias"]
+    fc["<code>fill_circle</code>"]
+    co["<code>circle_octant</code><br/>um oitavo do círculo"]
+  end
+  subgraph varr["Polígono: varredura"]
+    fp["<code>fill_polygon</code><br/>par ou ímpar"]
+  end
+  subgraph balde["Preenchimento: flood fill"]
+    ff["<code>flood_fill</code><br/>pilha e 4 vizinhos"]
+  end
+  subgraph tr["Transformações 2D: só mudam os pontos"]
+    mat["<code>translation</code>, <code>rotation</code>, <code>scale</code><br/><code>around</code> gira em volta do centro"]
+    ap["<code>apply</code><br/>[x y 1] · M"]
+    inv["<code>inverse</code><br/>mapeamento inverso"]
+  end
+  subgraph cor["Cor: blend"]
+    br["<code>blend_rect</code>"]
+    bd["<code>blend</code>"]
+  end
+  subgraph px["Framebuffer"]
+    pp["<code>put_pixel</code>"]
+    ps["<code>put_span</code>"]
+    gp["<code>get_pixel</code>"]
+    pi["<code>put_image</code>"]
+    bs["<code>blend_span</code>"]
+  end
+
+  brush --> bl
+  line --> bl
+  polygon -->|vazado| bl
+  polygon -->|preenchido| fp
+  circle -->|vazado| cp
+  circle -->|preenchido| fc
+  bucket --> ff
+  moves --> mat --> ap
+  patch --> inv
+  selpreview --> br
+  button --> bd
+  button -->|cor misturada| pp
+  bl --> st
+  cp --> co
+  fc --> co
+  cp --> st
+  st --> pp
+  fc --> ps
+  fp --> ps
+  fp -->|contorno| bl
+  ff --> gp
+  ff --> pp
+  inv --> pi
+  br --> bs
+
+  class brush,line,polygon,circle,bucket,moves,patch,selpreview,button purple
+  class bl,st,cp,fc,co,fp,ff,mat,ap,inv,br,bd teal
+  class pp,ps,gp,pi,bs yellow

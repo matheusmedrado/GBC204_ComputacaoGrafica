@@ -1,0 +1,46 @@
+flowchart TB
+  subgraph janela["Janela e entrada"]
+    glfw["<code>glfw</code><br/>abre a janela e avisa<br/>mouse e teclado"]
+    main["<code>main.py</code><br/><code>MiniPaint</code>: loop, eventos,<br/>forma selecionada e desfazer"]
+    gl["<code>glDrawPixels</code><br/>copia os pixels pra janela"]
+  end
+  subgraph interface["Barra, ferramentas e formas"]
+    ui["<code>ui.py</code><br/><code>Toolbar</code>: botões e ícones"]
+    tools["<code>tools.py</code><br/>uma classe por ferramenta<br/>com <code>press</code>, <code>drag</code> e <code>release</code>"]
+    shapes["<code>shapes.py</code><br/><code>Line</code>, <code>Polygon</code>, <code>Circle</code> e <code>Patch</code><br/>pontos mais estilo"]
+  end
+  subgraph algoritmos["Algoritmos dos slides"]
+    raster["<code>raster.py</code><br/>Bresenham, ponto médio<br/>e varredura"]
+    fill["<code>fill.py</code><br/>balde"]
+    transform["<code>transform.py</code><br/>matrizes 3x3"]
+  end
+  fb["<code>framebuffer.py</code><br/><code>Framebuffer</code>: matriz de pixels RGB"]
+  bmp["<code>bmp.py</code><br/>grava o canvas em BMP"]
+
+  glfw -->|mouse e teclado| main
+  main -->|<code>show</code>| gl
+  main <-->|cria a <code>Toolbar</code><br/>e os botões chamam o <code>MiniPaint</code>| ui
+  main <-->|ferramenta atual<br/>e o <code>MoveTool</code> mexe na forma| tools
+  main -->|monta as matrizes de<br/>mover, girar e escalar| transform
+  main -->|desenha e transforma<br/>a <code>selection</code>| shapes
+  main -->|cria <code>canvas</code> e <code>screen</code>| fb
+  main -->|moldura tracejada| raster
+  main -->|<code>save_bmp</code>| bmp
+  ui -->|ícones| raster
+  tools -->|devolvem a forma pronta| shapes
+  tools -->|pincel, prévia e<br/>buraco da seleção| raster
+  tools -->|<code>flood_fill</code>| fill
+  shapes -->|<code>Shape.draw</code>| raster
+  shapes -->|<code>apply</code> e <code>inverse</code>| transform
+  raster -.->|<code>put_pixel</code> e <code>put_span</code>| fb
+  fill -.->|<code>get_pixel</code> e <code>put_pixel</code>| fb
+  shapes -.->|<code>put_image</code>| fb
+  ui -.->|<code>Toolbar.fb</code> e <code>blend</code>| fb
+  bmp -.->|lê <code>pixels</code>| fb
+  tools -.->|<code>SelectTool</code> copia <code>pixels</code>| fb
+
+  class glfw,main,gl blue
+  class ui,tools,shapes purple
+  class raster,fill,transform teal
+  class fb yellow
+  class bmp tan
