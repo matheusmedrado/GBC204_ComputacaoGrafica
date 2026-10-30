@@ -1,7 +1,7 @@
 from raster import draw_line
 
 
-class Brush:
+class Style:
     def __init__(self, color=(0, 0, 0), size=1):
         self.color = color
         self.size = size
@@ -10,8 +10,8 @@ class Brush:
 class Tool:
     name = ""
 
-    def __init__(self, brush):
-        self.brush = brush
+    def __init__(self, style):
+        self.style = style
 
     def press(self, canvas, x, y):
         pass
@@ -26,23 +26,33 @@ class Tool:
         pass
 
 
-class Pencil(Tool):
-    name = "Lápis"
+class Brush(Tool):
+    name = "Pincel"
 
     def color(self, canvas):
-        return self.brush.color
+        return self.style.color
+
+    def size(self):
+        return self.style.size
 
     def press(self, canvas, x, y):
         self.last = (x, y)
-        draw_line(canvas, x, y, x, y, self.color(canvas), self.brush.size)
+        draw_line(canvas, x, y, x, y, self.color(canvas), self.size())
 
     def drag(self, canvas, x, y):
         # O mouse só avisa algumas posições por segundo, então ligamos a última à atual
-        draw_line(canvas, *self.last, x, y, self.color(canvas), self.brush.size)
+        draw_line(canvas, *self.last, x, y, self.color(canvas), self.size())
         self.last = (x, y)
 
 
-class Eraser(Pencil):
+class Pencil(Brush):
+    name = "Lápis"
+
+    def size(self):
+        return 1
+
+
+class Eraser(Brush):
     name = "Borracha"
 
     def color(self, canvas):
@@ -52,8 +62,8 @@ class Eraser(Pencil):
 class Line(Tool):
     name = "Linha"
 
-    def __init__(self, brush):
-        super().__init__(brush)
+    def __init__(self, style):
+        super().__init__(style)
         self.start = self.end = None
 
     def press(self, canvas, x, y):
@@ -63,9 +73,9 @@ class Line(Tool):
         self.end = (x, y)
 
     def release(self, canvas, x, y):
-        draw_line(canvas, *self.start, x, y, self.brush.color, self.brush.size)
+        draw_line(canvas, *self.start, x, y, self.style.color, self.style.size)
         self.start = self.end = None
 
     def preview(self, screen):
         if self.start:
-            draw_line(screen, *self.start, *self.end, self.brush.color, self.brush.size)
+            draw_line(screen, *self.start, *self.end, self.style.color, self.style.size)

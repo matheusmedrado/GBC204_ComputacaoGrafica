@@ -2,7 +2,7 @@ import glfw
 from OpenGL.GL import *
 
 from framebuffer import Framebuffer
-from tools import Brush, Eraser, Line, Pencil
+from tools import Brush, Eraser, Line, Pencil, Style
 
 WIDTH, HEIGHT = 800, 600
 SIZES = {glfw.KEY_1: ("fino", 1), glfw.KEY_2: ("médio", 5), glfw.KEY_3: ("grosso", 11)}
@@ -13,12 +13,13 @@ class MiniPaint:
         self.canvas = Framebuffer(WIDTH, HEIGHT)
         # A tela é o canvas mais a prévia do que ainda está sendo desenhado
         self.screen = Framebuffer(WIDTH, HEIGHT)
-        self.brush = Brush()
+        self.style = Style()
         self.size_name = "fino"
         self.tools = {
-            glfw.KEY_P: Pencil(self.brush),
-            glfw.KEY_B: Eraser(self.brush),
-            glfw.KEY_L: Line(self.brush),
+            glfw.KEY_P: Pencil(self.style),
+            glfw.KEY_I: Brush(self.style),
+            glfw.KEY_B: Eraser(self.style),
+            glfw.KEY_L: Line(self.style),
         }
         self.tool = self.tools[glfw.KEY_P]
         self.dragging = False
@@ -68,7 +69,7 @@ class MiniPaint:
         elif key == glfw.KEY_N:
             self.canvas.clear()
         elif key in SIZES:
-            self.size_name, self.brush.size = SIZES[key]
+            self.size_name, self.style.size = SIZES[key]
         elif key in self.tools and not self.dragging:
             self.tool = self.tools[key]
         self.update_title()
