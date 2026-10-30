@@ -25,3 +25,6 @@ class Framebuffer:
 
     def clear(self, color=None):
         self.pixels[:] = color or self.background
+
+    def copy_from(self, other):
+        self.pixels[:] = other.pixels
