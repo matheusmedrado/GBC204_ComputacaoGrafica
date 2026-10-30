@@ -36,3 +36,12 @@ def around(center, m):
 def apply(m, points):
     return [(x * m[0][0] + y * m[1][0] + m[2][0],
              x * m[0][1] + y * m[1][1] + m[2][1]) for x, y in points]
+
+
+def inverse(m):
+    # Desfaz a transformação: a parte 2x2 vira a inversa dela e o deslocamento volta pro lado contrário
+    (a, b, _), (c, d, _), (e, f, _) = m
+    det = a * d - b * c
+    return [[d / det, -b / det, 0],
+            [-c / det, a / det, 0],
+            [(c * f - d * e) / det, (b * e - a * f) / det, 1]]

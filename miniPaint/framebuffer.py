@@ -38,3 +38,21 @@ class Framebuffer:
 
     def copy_from(self, other):
         self.pixels[:] = other.pixels
+
+    def put_image(self, x, y, image, mask):
+        # Cola só os pontos marcados da imagem, cortando o que cair fora da tela
+        h, w = mask.shape
+        x0, y0 = max(x, 0), max(y, 0)
+        x1, y1 = min(x + w, self.width), min(y + h, self.height)
+        if x0 < x1 and y0 < y1:
+            visible = mask[y0 - y:y1 - y, x0 - x:x1 - x]
+            self.pixels[y0:y1, x0:x1][visible] = image[y0 - y:y1 - y, x0 - x:x1 - x][visible]
+
+    def snapshot(self):
+        return self.pixels.copy()
+
+    def restore(self, snapshot):
+        self.pixels[:] = snapshot
+
+    def matches(self, snapshot):
+        return np.array_equal(self.pixels, snapshot)
