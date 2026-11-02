@@ -10,3 +10,4 @@ Trabalhos da disciplina de Computação Gráfica (UFU, FACOM), semestre 2026-02.
 
 Matheus Medrado Ferreira - 12311BCC054
 Giovana M. Ferreira - 12221BCC033
+Christian Silva Rodrigues - 12311BCC025
